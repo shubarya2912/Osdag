@@ -210,18 +210,21 @@ class Window(QMainWindow):
             print('off_display', off_display)
             self.commLogicObj.display = off_display
             current_component = self.commLogicObj.component
+
+            images_dir = files("osdag.data.ResourceFiles.images")
+
             self.commLogicObj.display_3DModel("Model", "gradient_bg")
             off_display.set_bg_gradient_color([255,255,255],[255,255,255])
-            off_display.ExportToImage('./ResourceFiles/images/3d.png')
+            off_display.ExportToImage(str(images_dir.joinpath('3d.png')))
             off_display.View_Front()
             off_display.FitAll()
-            off_display.ExportToImage('./ResourceFiles/images/front.png')
+            off_display.ExportToImage(str(images_dir.joinpath('front.png')))
             off_display.View_Top()
             off_display.FitAll()
-            off_display.ExportToImage('./ResourceFiles/images/top.png')
+            off_display.ExportToImage(str(images_dir.joinpath('top.png')))
             off_display.View_Right()
             off_display.FitAll()
-            off_display.ExportToImage('./ResourceFiles/images/side.png')
+            off_display.ExportToImage(str(images_dir.joinpath('side.png')))
             self.commLogicObj.display = self.display
             self.commLogicObj.component = current_component
 
@@ -2120,12 +2123,12 @@ class Window(QMainWindow):
                     self.frame.findChild(QtWidgets.QCheckBox, chkbox[0]).setEnabled(True)
                 for action in self.menugraphics_component_list:
                     action.setEnabled(True)
-                fName = str('./ResourceFiles/images/3d.png')
+                fName = str(files("osdag.data.ResourceFiles.images").joinpath('3d.png'))
                 file_extension = fName.split(".")[-1]
 
                 # if file_extension == 'png':
                 #     self.display.ExportToImage(fName)
-                #     im = Image.open('./ResourceFiles/images/3d.png')
+                #     im = Image.open(str(files("osdag.data.ResourceFiles.images").joinpath('3d.png')))
                 #     w,h=im.size
                 #     if(w< 640 or h < 360):
                 #         print('Re-taking Screenshot')
@@ -2136,9 +2139,9 @@ class Window(QMainWindow):
                 #         QTimer.singleShot(0, lambda:self.retakeScreenshot(fName))
 
             else:
-                for fName in ['3d.png', 'top.png',
-                              'front.png', 'side.png']:
-                    with open("./ResourceFiles/images/"+fName, 'w'):
+                images_dir = files("osdag.data.ResourceFiles.images")
+                for fName in ['3d.png', 'top.png', 'front.png', 'side.png']:
+                    with open(str(images_dir.joinpath(fName)), 'w'):
                         pass
                 self.display.EraseAll()
                 for chkbox in main.get_3d_components(main):

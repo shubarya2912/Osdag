@@ -25,7 +25,7 @@ class CreateLatex(Document):
 
     def __init__(self):
         super().__init__()
-
+    
     def save_latex(self, uiObj, Design_Check, reportsummary, filename, rel_path, Disp_2d_image, Disp_3d_image, module=''):
         companyname = str(reportsummary["ProfileSummary"]['CompanyName'])
         companylogo = str(reportsummary["ProfileSummary"]['CompanyLogo'])
@@ -37,7 +37,8 @@ class CreateLatex(Document):
         client = str(reportsummary['Client'])
 
         does_design_exist = reportsummary['does_design_exist']
-        imgpath_osdagheader = files("osdag.data.ResourceFiles.images").joinpath("Osdag_header_report.png")
+        imgpath_osdagheader = os.path.normpath(str(files("osdag.data.ResourceFiles.images").joinpath("Osdag_header_report.png"))).replace(os.sep, '/')
+
         # Add document header
         geometry_options = {"top": "5cm", "hmargin": "2cm", "headheight": "100pt", "footskip": "100pt", "bottom":"5cm"}
         doc = Document(geometry_options=geometry_options, indent=False)
@@ -58,7 +59,7 @@ class CreateLatex(Document):
             with header.create(Tabularx('|l|p{4cm}|l|X|')) as table:
                 table.add_hline()
                 # MultiColumn(4)
-                table.add_row((MultiColumn(2, align='|c|', data=('' if companylogo is '' else StandAloneGraphic(image_options="height=0.95cm",
+                table.add_row((MultiColumn(2, align='|c|', data=('' if companylogo == '' else StandAloneGraphic(image_options="height=0.95cm",
                                                                                                                filename=companylogo))),
                                MultiColumn(2, align='|c|', data=['Created with',StandAloneGraphic(image_options="width=4.0cm,height=1cm",
                                                                                                   filename=imgpath_osdagheader)]),))
@@ -101,7 +102,8 @@ class CreateLatex(Document):
                         sectiondetails = uiObj[i]
                         image_name = sectiondetails[KEY_DISP_SEC_PROFILE]
 
-                        Img_path = files("osdag.data.ResourceFiles.images").joinpath(image_name + ".png")
+                        Img_path = os.path.normpath(str(files("osdag.data.ResourceFiles.images").joinpath(image_name + ".png"))).replace(os.sep, '/')
+
                         if (len(sectiondetails))% 2 == 0:
                         # merge_rows = int(round_up(len(sectiondetails),2)/2 + 2)
                             merge_rows = int((len(sectiondetails)/2)) +2
@@ -257,7 +259,7 @@ class CreateLatex(Document):
                                     table.add_hline()
                                     sectiondetails = uiObj[i]
                                     image_name = sectiondetails[KEY_DISP_SEC_PROFILE]
-                                    Img_path = files("osdag.data.ResourceFiles.images").joinpath(image_name + ".png")
+                                    Img_path = os.path.normpath(str(files("osdag.data.ResourceFiles.images").joinpath(image_name + ".png"))).replace(os.sep, '/')
                                     if (len(sectiondetails)) % 2 == 0:
                                         # merge_rows = int(round_up(len(sectiondetails),2)/2 + 2)
                                         merge_rows = int(round_up((len(sectiondetails) / 2), 1, 0) + 2)
@@ -409,26 +411,25 @@ class CreateLatex(Document):
 
         if does_design_exist and sys.platform != 'darwin' and Disp_3d_image != '':
             doc.append(NewPage())
-            Disp_top_image = "/ResourceFiles/images/top.png"
-            Disp_side_image = "/ResourceFiles/images/side.png"
-            Disp_front_image = "/ResourceFiles/images/front.png"
-            view_3dimg_path = rel_path + Disp_3d_image
-            view_topimg_path = rel_path + Disp_top_image
-            view_sideimg_path = rel_path + Disp_side_image
-            view_frontimg_path = rel_path + Disp_front_image
+            Disp_3d_image = "3d.png"
+            Disp_top_image = "top.png"
+            Disp_side_image = "side.png"
+            Disp_front_image = "front.png"
+            
+            view_3dimg_path = os.path.normpath(str(files("osdag.data.ResourceFiles.images").joinpath(Disp_3d_image))).replace(os.sep, '/')
+            view_topimg_path = os.path.normpath(str(files("osdag.data.ResourceFiles.images").joinpath(Disp_top_image))).replace(os.sep, '/')
+            view_sideimg_path = os.path.normpath(str(files("osdag.data.ResourceFiles.images").joinpath(Disp_side_image))).replace(os.sep, '/')
+            view_frontimg_path = os.path.normpath(str(files("osdag.data.ResourceFiles.images").joinpath(Disp_front_image))).replace(os.sep, '/')
+                        
             with doc.create(Section('3D Views')):
                 with doc.create(Tabularx(r'|>{\centering}X|>{\centering\arraybackslash}X|', row_height=1.2)) as table:
-                    view_3dimg_path = rel_path + Disp_3d_image
-                    view_topimg_path = rel_path + Disp_top_image
-                    view_sideimg_path = rel_path + Disp_side_image
-                    view_frontimg_path = rel_path + Disp_front_image
                     table.add_hline()
                     table.add_row([StandAloneGraphic(image_options="height=4cm",filename=view_3dimg_path),
-                                  StandAloneGraphic(image_options="height=4cm",filename=view_topimg_path)])
+                                StandAloneGraphic(image_options="height=4cm",filename=view_topimg_path)])
                     table.add_row('(a) 3D View', '(b) Top View')
                     table.add_hline()
                     table.add_row([StandAloneGraphic(image_options="height=4cm", filename=view_sideimg_path),
-                                  StandAloneGraphic(image_options="height=4cm", filename=view_frontimg_path)])
+                                StandAloneGraphic(image_options="height=4cm", filename=view_frontimg_path)])
                     table.add_row('(c) Side View', '(d) Front View')
                     table.add_hline()
                 # with doc.create(Figure(position='h!')) as view_3D:
@@ -440,48 +441,47 @@ class CreateLatex(Document):
                 #     view_3D.add_caption('3D View')
         else:
             doc.append(NewPage())
-            Disp_3d_image = "/ResourceFiles/images/broken.png"
-            Disp_top_image = "/ResourceFiles/images/broken.png"
-            Disp_side_image = "/ResourceFiles/images/broken.png"
-            Disp_front_image = "/ResourceFiles/images/broken.png"
-            view_3dimg_path = rel_path + Disp_3d_image
-            view_topimg_path = rel_path + Disp_top_image
-            view_sideimg_path = rel_path + Disp_side_image
-            view_frontimg_path = rel_path + Disp_front_image
+            Disp_3d_image = "broken.png"
+            Disp_top_image = "broken.png"
+            Disp_side_image = "broken.png"
+            Disp_front_image = "broken.png"
+            
+            view_3dimg_path = os.path.normpath(str(files("osdag.data.ResourceFiles.images").joinpath(Disp_3d_image))).replace(os.sep, '/')
+            view_topimg_path = os.path.normpath(str(files("osdag.data.ResourceFiles.images").joinpath(Disp_top_image))).replace(os.sep, '/')
+            view_sideimg_path = os.path.normpath(str(files("osdag.data.ResourceFiles.images").joinpath(Disp_side_image))).replace(os.sep, '/')
+            view_frontimg_path = os.path.normpath(str(files("osdag.data.ResourceFiles.images").joinpath(Disp_front_image))).replace(os.sep, '/')
+                        
             with doc.create(Section('3D Views')):
                 with doc.create(Tabularx(r'|>{\centering}X|>{\centering\arraybackslash}X|', row_height=1.2)) as table:
-                    view_3dimg_path = rel_path + Disp_3d_image
-                    view_topimg_path = rel_path + Disp_top_image
-                    view_sideimg_path = rel_path + Disp_side_image
-                    view_frontimg_path = rel_path + Disp_front_image
                     table.add_hline()
                     table.add_row([StandAloneGraphic(image_options="height=4cm", filename=view_3dimg_path),
-                                   StandAloneGraphic(image_options="height=4cm", filename=view_topimg_path)])
+                                StandAloneGraphic(image_options="height=4cm", filename=view_topimg_path)])
                     table.add_row('(a) 3D View', '(b) Top View')
                     table.add_hline()
                     table.add_row([StandAloneGraphic(image_options="height=4cm", filename=view_sideimg_path),
-                                   StandAloneGraphic(image_options="height=4cm", filename=view_frontimg_path)])
+                                StandAloneGraphic(image_options="height=4cm", filename=view_frontimg_path)])
                     table.add_row('(c) Side View', '(d) Front View')
                     table.add_hline()
 
         with doc.create(Section('Design Log')):
             doc.append(pyl.Command('Needspace', arguments=NoEscape(r'10\baselineskip')))
-            logger_msgs=reportsummary['logger_messages'].split('\n')
+            logger_msgs = reportsummary.get('logger_messages', '').split('\n')
             for msg in logger_msgs:
-                if('WARNING' in msg):
-                    colour='blue'
-                elif('INFO' in msg):
-                    colour='OsdagGreen'
-                elif('ERROR' in msg):
-                    colour='red'
+                if 'WARNING' in msg:
+                    colour = 'blue'
+                elif 'INFO' in msg:
+                    colour = 'OsdagGreen'
+                elif 'ERROR' in msg:
+                    colour = 'red'
                 else:
                     continue
-                doc.append(TextColor(colour,'\n'+msg))
+                doc.append(TextColor(colour, '\n' + msg))
+
         try:
             doc.generate_pdf(filename, compiler='pdflatex', clean_tex=False)
-        except:
-            pass
+        except Exception as e:
+            print(f"PDF generation failed: {e}")
 
-def color_cell(cellcolor,celltext):
+def color_cell(cellcolor, celltext):
     string = NoEscape(r'\cellcolor{'+cellcolor+r'}{'+celltext+r'}')
     return string
