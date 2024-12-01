@@ -210,21 +210,23 @@ class Window(QMainWindow):
             print('off_display', off_display)
             self.commLogicObj.display = off_display
             current_component = self.commLogicObj.component
-
-            images_dir = files("osdag.data.ResourceFiles.images")
-
             self.commLogicObj.display_3DModel("Model", "gradient_bg")
+
+            image_folder_path = "./ResourceFiles/images"
+            if not os.path.exists(image_folder_path):
+                os.makedirs(image_folder_path)
+
             off_display.set_bg_gradient_color([255,255,255],[255,255,255])
-            off_display.ExportToImage(str(images_dir.joinpath('3d.png')))
+            off_display.ExportToImage(os.path.join(image_folder_path, '3d.png'))
             off_display.View_Front()
             off_display.FitAll()
-            off_display.ExportToImage(str(images_dir.joinpath('front.png')))
+            off_display.ExportToImage(os.path.join(image_folder_path, 'front.png'))
             off_display.View_Top()
             off_display.FitAll()
-            off_display.ExportToImage(str(images_dir.joinpath('top.png')))
+            off_display.ExportToImage(os.path.join(image_folder_path, 'top.png'))
             off_display.View_Right()
             off_display.FitAll()
-            off_display.ExportToImage(str(images_dir.joinpath('side.png')))
+            off_display.ExportToImage(os.path.join(image_folder_path, 'side.png'))
             self.commLogicObj.display = self.display
             self.commLogicObj.component = current_component
 
@@ -774,12 +776,12 @@ class Window(QMainWindow):
         in_layout2.setRowStretch(j+1, 10)
         in_scroll.setWidget(in_scrollcontent)
 
-        maxi_width = maxi_width_left + maxi_width_right
+        maxi_width = int(maxi_width_left + maxi_width_right)
         in_scrollcontent.setMinimumSize(maxi_width,in_scrollcontent.sizeHint().height())
         maxi_width += 200
-        maxi_width = max(maxi_width, scale*350)    # In case there is no widget
+        maxi_width = max(maxi_width, int(scale*350))    # In case there is no widget
         self.inputDock.setFixedWidth(maxi_width)
-        self.in_widget.setFixedWidth( maxi_width)
+        self.in_widget.setFixedWidth(maxi_width)
         for option in option_list:
             key = self.dockWidgetContents.findChild(QtWidgets.QWidget, option[0])
 
@@ -1053,10 +1055,10 @@ class Window(QMainWindow):
             j = j + 1
         out_layout2.setRowStretch(j+1, 10)
         out_scroll.setWidget(out_scrollcontent)
-        maxi_width = maxi_width_left + maxi_width_right
 
+        maxi_width = int(maxi_width_left + maxi_width_right)
         maxi_width += 80    # +73 coz of whitespaces
-        maxi_width = max(maxi_width, scale*350) # in case no widget
+        maxi_width = max(maxi_width, int(scale*350)) # in case no widget
         out_scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         out_scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
 
@@ -2016,7 +2018,6 @@ class Window(QMainWindow):
                 else:
                     self.designPrefDialog.flag = True
                 print(f"QDialog done")
-                
 
                 # if self.prev_inputs != {}:
                 #     self.design_pref_inputs = {}
@@ -2031,7 +2032,7 @@ class Window(QMainWindow):
             self.textEdit.clear()
             with open("logging_text.log", 'w') as log_file:
                 pass
-            
+
             # print(f"\n design_dictionary {self.design_inputs}")
             error = main.func_for_validation(main, self.design_inputs)
             status = main.design_status
@@ -2123,12 +2124,12 @@ class Window(QMainWindow):
                     self.frame.findChild(QtWidgets.QCheckBox, chkbox[0]).setEnabled(True)
                 for action in self.menugraphics_component_list:
                     action.setEnabled(True)
-                fName = str(files("osdag.data.ResourceFiles.images").joinpath('3d.png'))
+                fName = str('./ResourceFiles/images/3d.png')
                 file_extension = fName.split(".")[-1]
 
                 # if file_extension == 'png':
                 #     self.display.ExportToImage(fName)
-                #     im = Image.open(str(files("osdag.data.ResourceFiles.images").joinpath('3d.png')))
+                #     im = Image.open('./ResourceFiles/images/3d.png')
                 #     w,h=im.size
                 #     if(w< 640 or h < 360):
                 #         print('Re-taking Screenshot')
@@ -2139,9 +2140,9 @@ class Window(QMainWindow):
                 #         QTimer.singleShot(0, lambda:self.retakeScreenshot(fName))
 
             else:
-                images_dir = files("osdag.data.ResourceFiles.images")
-                for fName in ['3d.png', 'top.png', 'front.png', 'side.png']:
-                    with open(str(images_dir.joinpath(fName)), 'w'):
+                for fName in ['3d.png', 'top.png',
+                              'front.png', 'side.png']:
+                    with open("./ResourceFiles/images/"+fName, 'w'):
                         pass
                 self.display.EraseAll()
                 for chkbox in main.get_3d_components(main):
