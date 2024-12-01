@@ -1764,4 +1764,3 @@ class EndPlateConnection(ShearConnection):
                     return True
                 else:
                     return False
-
