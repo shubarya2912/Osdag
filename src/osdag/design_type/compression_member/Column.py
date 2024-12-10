@@ -1293,8 +1293,8 @@ class ColumnDesign(Member):
         if not hasattr(self, 'bucklingclass'):
             self.bucklingclass = 1  # Default buckling class
 
-        if not hasattr(self, 'bf'):
-            self.bf = 0  # Default flange width
+        #if not hasattr(self, 'bf'):
+        #    self.bf = 0  # Default flange width
     
         if not hasattr(self, 'tf'):
             self.tf = 0  # Default flange thickness
@@ -1458,6 +1458,7 @@ class ColumnDesign(Member):
              KEY_DISP_SECSIZE:  str(self.sec_list),
              KEY_DISP_ULTIMATE_STRENGTH_REPORT: self.euler_bs_yy,
              KEY_DISP_YIELD_STRENGTH_REPORT: self.result_bc_yy,
+             KEY_DISP_EFFECTIVE_AREA_PARA: self.effective_area_factor, #To Check
 
 
              "Column Section - Mechanical Properties": "TITLE",
@@ -1466,7 +1467,46 @@ class ColumnDesign(Member):
 
         self.report_check = []
 
-        self.h = (self.beam_D - (2 * self.beam_tf))
+        self.h = (self.section_property.depth - (2 * self.section_property.flange_thickness))
+
+        # Buckling Class Computation
+        def calculate_buckling_class(h, bf, tf, axis):
+            """
+            Determines buckling class using IS 800:2007 checks.
+            axis: Can be "ZZ" or "YY"
+            """
+            h_bf_ratio = h / bf
+            tf_limit = tf  # Apply limits to tf as needed by IS 800
+            if axis == "ZZ":
+                # Check based on h/bf limits
+                if h_bf_ratio <= 1 and tf_limit >= 40:
+                    return "A"
+                elif 1 < h_bf_ratio <= 1.5 and tf_limit >= 40:
+                    return "B"
+                elif 1.5 < h_bf_ratio <= 2 and tf_limit >= 40:
+                    return "C"
+                else:
+                    return "D"
+            elif axis == "YY":
+                # Check based on h/bf limits
+                if h_bf_ratio <= 1.5 and tf_limit >= 40:
+                    return "A"
+                elif 1.5 < h_bf_ratio <= 2 and tf_limit >= 40:
+                    return "B"
+                elif 2 < h_bf_ratio <= 2.5 and tf_limit >= 40:
+                    return "C"
+                else:
+                    return "D"
+            else:
+                return "Invalid Axis"
+
+        # Calculate buckling classes based on ratios
+        #h_bf_ratio_zz = h / bf
+        #h_bf_ratio_yy = h / bf
+        buckling_class_zz = calculate_buckling_class(self.h, self.section_property.flange_width, self.tf, "ZZ")
+        buckling_class_yy = calculate_buckling_class(self.h, self.section_property.flange_width, self.tf, "YY")
+
+
 
         # 1.1 Input sections display
         #t1 = ('SubSection', 'List of Input Sections', str(self.input_section_list))
@@ -1474,32 +1514,63 @@ class ColumnDesign(Member):
 
 
         # 2.2 CHECK: Buckling Class - Compatibility Check
+        #t1 = ('SubSection', 'Buckling Class - Compatibility Check', '|p{4cm}|p{3.5cm}|p{6.5cm}|p{2cm}|')
+        #self.report_check.append(t1)
+
+        #t1 = (
+        #    "h/bf , tf", 
+        #    comp_column_class_section_check_required(self.bucklingclass, self.h, self.bf),
+        #    comp_column_class_section_check_provided(self.bucklingclass, self.h, self.bf, self.tf, self.var_h_bf), ''
+        #    r"$\frac{h}{b_f}, t_f \text{ Compatible}$"
+        #)  # if self.bc_compatibility_status is True else 'Not compatible')
+        #self.report_check.append(t1)
         t1 = ('SubSection', 'Buckling Class - Compatibility Check', '|p{4cm}|p{3.5cm}|p{6.5cm}|p{2cm}|')
         self.report_check.append(t1)
+        t1 = ("h/bf & tf limits",
+            f"h/bf = {round(self.h / self.section_property.flange_width, 2)}, tf = {round(self.section_property.flange_thickness, 2)}",
+            f"ZZ Class = {buckling_class_zz}, YY Class = {buckling_class_yy}",
+            "Remarks")
+        self.report_check.append(t1)
 
-        t1 = (
-            "h/bf , tf", 
-            comp_column_class_section_check_required(self.bucklingclass, self.h, self.bf),
-            comp_column_class_section_check_provided(self.bucklingclass, self.h, self.bf, self.tf, self.var_h_bf), ''
-            r"$\frac{h}{b_f}, t_f \text{ Compatible}$"
-        )  # if self.bc_compatibility_status is True else 'Not compatible')
+        t1 = ('SubSection', 'Web & Flange Classification', '|p{3cm}|p{3.5cm}|p{8.5cm}|p{1cm}|')
+        self.report_check.append(t1)
+
+
+        # Section classification checks with h, tf, and limits
+        t1 = ('Web Class', 'Neutral Axis Check',
+            cl_3_7_2_section_classification_web(round(self.h, 2),
+                                                round(self.section_property.web_thickness, 2),
+                                                self.input_section_classification[self.result_designation][4],
+                                                self.epsilon, self.section_property.type,
+                                                self.input_section_classification[self.result_designation][2]),
+            ' ')
+        self.report_check.append(t1)
+
+        t1 = ('Flange Class', self.section_property.type,
+            cl_3_7_2_section_classification_flange(
+                round(self.section_property.flange_width/2, 2),
+                round(self.section_property.flange_thickness, 2),
+                self.input_section_classification[self.result_designation][3],
+                self.epsilon,
+                self.input_section_classification[self.result_designation][1]),
+            ' ')
         self.report_check.append(t1)
 
         # 2.3 CHECK: Cross-section classification
         t1 = ('SubSection', 'Cross-section classification', '|p{4.5cm}|p{3cm}|p{6.5cm}|p{1.5cm}|')
         self.report_check.append(t1)
 
-        t1 = (
-            "b/tf and d/tw",
-            cross_section_classification_required(self.section),
-            cross_section_classification_provided(
-                self.tf, self.b1, self.epsilon, self.section, self.b1_tf,
-                self.d1_tw, self.ep1, self.ep2, self.ep3, self.ep4
-            ), 
-            ''
-            r"$b = \frac{b_\text{f}}{2}, d = h - 2(T + R_1), \varepsilon = \sqrt{\frac{250}{F_\text{y}}}, \text{Compatible}$"
-        )  # if self.bc_compatibility_status is True else 'Not compatible')
-        self.report_check.append(t1)
+        #t1 = (
+        #    "b/tf and d/tw",
+        #    cross_section_classification_required(self.section),
+        #   cross_section_classification_provided(
+        #        self.tf, self.b1, self.epsilon, self.section, self.b1_tf,
+        #        self.d1_tw, self.ep1, self.ep2, self.ep3, self.ep4
+        #    ), 
+        #    ''
+        #    r"$b = \frac{b_\text{f}}{2}, d = h - 2(T + R_1), \varepsilon = \sqrt{\frac{250}{F_\text{y}}}, \text{Compatible}$"
+        #)  # if self.bc_compatibility_status is True else 'Not compatible')
+        #self.report_check.append(t1)
 
         # 2.4 CHECK : Member Check
         t1 = ('SubSection', 'Member Check', '|p{4.5cm}|p{3cm}|p{6.5cm}|p{1.5cm}|')
@@ -1532,15 +1603,12 @@ class ColumnDesign(Member):
         t1 = ('', '', '', '')
         self.report_check.append(t1)
 
-        Disp_2d_image = []
-        Disp_3d_image = "/ResourceFiles/images/3d.png"
         print(sys.path[0])
         rel_path = str(sys.path[0])
         rel_path = os.path.abspath(".") # TEMP
         rel_path = rel_path.replace("\\", "/")
         fname_no_ext = popup_summary['filename']
-        CreateLatex.save_latex(CreateLatex(), self.report_input, self.report_check, popup_summary, fname_no_ext, rel_path, Disp_2d_image,
-                               Disp_3d_image, module=self.module)
+        CreateLatex.save_latex(CreateLatex(), self.report_input, self.report_check, popup_summary, fname_no_ext,
+                              rel_path, [], '', module=self.module) #
         
-
 
