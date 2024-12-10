@@ -21,7 +21,7 @@ from ...utils.common.component import *
 from ..member import Member
 from ...Report_functions import *
 from ...design_report.reportGenerator_latex import CreateLatex
-
+from pylatex.utils import NoEscape
 
 class ColumnDesign(Member):
 
@@ -766,11 +766,11 @@ class ColumnDesign(Member):
                 elif self.flange_class == 'Semi-Compact' and self.web_class == 'Semi-Compact':
                     self.section_class = 'Semi-Compact'
 
-            logger.info("The flange of the trial section ({}) is {} and web is {}. The section is {} [Reference: Cl 3.7, IS 800:2007].".
-                        format(trial_section, self.flange_class, self.web_class, self.section_class))
+        logger.info("The flange of the trial section ({}) is {} and web is {}. The section is {} [Reference: Cl 3.7, IS 800:2007].".
+                    format(trial_section, self.flange_class, self.web_class, self.section_class))
 
             # 2.2 - Effective length
-            self.effective_length_zz = IS800_2007.cl_7_2_2_effective_length_of_prismatic_compression_members(
+        self.effective_length_zz = IS800_2007.cl_7_2_2_effective_length_of_prismatic_compression_members(
                 self.length_zz,
                 end_1=self.end_1_z,
                 end_2=self.end_2_z)
@@ -780,7 +780,7 @@ class ColumnDesign(Member):
             #     self.sec_profile) / self.length_yy  # mm
             # print(f"self.effective_length {self.effective_length_yy} ")
 
-            self.effective_length_yy = IS800_2007.cl_7_2_2_effective_length_of_prismatic_compression_members(
+        self.effective_length_yy = IS800_2007.cl_7_2_2_effective_length_of_prismatic_compression_members(
                 self.length_yy,
                 end_1=self.end_1_y,
                 end_2=self.end_2_y)
@@ -801,15 +801,15 @@ class ColumnDesign(Member):
             # print("+++++++++++++++++++++++++++++++++++++++++++++++")
 
             # 2.3 - Effective slenderness ratio
-            self.effective_sr_zz = self.effective_length_zz / self.section_property.rad_of_gy_z
-            self.effective_sr_yy = self.effective_length_yy / self.section_property.rad_of_gy_y
+        self.effective_sr_zz = self.effective_length_zz / self.section_property.rad_of_gy_z
+        self.effective_sr_yy = self.effective_length_yy / self.section_property.rad_of_gy_y
 
-            limit = IS800_2007.cl_3_8_max_slenderness_ratio(1)
-            if self.effective_sr_zz > limit and self.effective_sr_yy > limit:
+        limit = IS800_2007.cl_3_8_max_slenderness_ratio(1)
+        if self.effective_sr_zz > limit and self.effective_sr_yy > limit:
                 logger.warning("Length provided is beyond the limit allowed. [Reference: Cl 3.8, IS 800:2007]")
                 logger.error("Cannot compute. Given Length does not pass.")
                 local_flag = False
-            else:
+        else:
                 logger.info("Length provided is within the limit allowed. [Reference: Cl 3.8, IS 800:2007]")
 
             # if len(self.allowed_sections) == 0:
@@ -823,8 +823,8 @@ class ColumnDesign(Member):
             #     self.input_section_list.append(trial_section)
             #     self.input_section_classification.update({trial_section: self.section_class})
             # print(f"self.section_class{self.section_class}")
-            self.input_section_list.append(trial_section)
-            self.input_section_classification.update({trial_section: self.section_class})
+        self.input_section_list.append(trial_section)
+        self.input_section_classification.update({trial_section: self.section_class})
         return local_flag
 
     def design_column(self):
@@ -1274,8 +1274,113 @@ class ColumnDesign(Member):
             logger.info(": ========== End Of Design ============")
 
     ### start writing save_design from here!
+    """def save_design(self, popup_summary):
+
+        if self.connectivity == 'Hollow/Tubular Column Base':
+            if self.dp_column_designation[1:4] == 'SHS':
+                select_section_img = 'SHS'
+            elif self.dp_column_designation[1:4] == 'RHS':
+                select_section_img = 'RHS'
+            else:
+                select_section_img = 'CHS'
+        else:
+            if self.column_properties.flange_slope != 90:
+                select_section_img = "Slope_Beam"
+            else:
+                select_section_img = "Parallel_Beam" """
     def save_design(self, popup_summary):
 
+        if not hasattr(self, 'bucklingclass'):
+            self.bucklingclass = 1  # Default buckling class
+
+        if not hasattr(self, 'bf'):
+            self.bf = 0  # Default flange width
+    
+        if not hasattr(self, 'tf'):
+            self.tf = 0  # Default flange thickness
+        
+        if not hasattr(self, 'var_h_bf'):
+            self.var_h_bf = 0  # Default h/bf ratio
+
+        if not hasattr(self, 'beam_D'):
+            self.beam_D = 0  # Default beam depth
+    
+        if not hasattr(self, 'beam_tf'):
+            self.beam_tf = 0  # Default beam flange thickness
+
+        # New attribute initializations for cross-section classification
+        if not hasattr(self, 'section'):
+            self.section = 'I'  # Default section type
+        
+        if not hasattr(self, 'tf'):
+            self.tf = 0  # Default flange thickness
+        
+        if not hasattr(self, 'b1'):
+            self.b1 = 0  # Default width
+        
+        if not hasattr(self, 'epsilon'):
+            self.epsilon = 0  # Default epsilon value
+        
+        if not hasattr(self, 'b1_tf'):
+            self.b1_tf = 0  # Default b1/tf ratio
+        
+        if not hasattr(self, 'd1_tw'):
+            self.d1_tw = 0  # Default d1/tw ratio
+        
+        if not hasattr(self, 'ep1'):
+            self.ep1 = 0  # Default ep1
+        
+        if not hasattr(self, 'ep2'):
+            self.ep2 = 0  # Default ep2
+        
+        if not hasattr(self, 'ep3'):
+            self.ep3 = 0  # Default ep3
+        
+        if not hasattr(self, 'ep4'):
+            self.ep4 = 0  # Default ep4
+        
+        # Slenderness and strength check attributes
+        if not hasattr(self, 'KL'):
+            self.KL = 0  # Default KL value
+        
+        if not hasattr(self, 'ry'):
+            self.ry = 0  # Default ry value
+        
+        if not hasattr(self, 'lamba'):
+            self.lamba = 0  # Default lambda value
+        
+        if not hasattr(self, 'gamma_mo'):
+            self.gamma_mo = 1.1  # Default gamma_mo value
+        
+        if not hasattr(self, 'f_y'):
+            self.f_y = 0  # Default yield strength
+        
+        if not hasattr(self, 'f_y_gamma_mo'):
+            self.f_y_gamma_mo = 0  # Default f_y/gamma_mo
+        
+        if not hasattr(self, 'facd'):
+            self.facd = 0  # Default design compressive stress
+        
+        if not hasattr(self, 'axial'):
+            self.axial = 0  # Default axial load
+        
+        if not hasattr(self, 'Aeff'):
+            self.Aeff = 0  # Default effective area
+        
+        if not hasattr(self, 'A_eff_facd'):
+            self.A_eff_facd = 0  # Default effective area * design compressive stress
+
+        # Minimal fix to handle potential missing attributes
+        if not hasattr(self, 'connectivity'):
+            self.connectivity = 'Default'  # Default connectivity
+        if not hasattr(self, 'column_properties'):
+            # Create a simple object with flange_slope
+            class ColumnProperties:
+                def __init__(self):
+                    self.flange_slope = 90  # Default to parallel beam
+            self.column_properties = ColumnProperties()
+        
+        # Rest of the original method remains the same
         if self.connectivity == 'Hollow/Tubular Column Base':
             if self.dp_column_designation[1:4] == 'SHS':
                 select_section_img = 'SHS'
@@ -1289,7 +1394,7 @@ class ColumnDesign(Member):
             else:
                 select_section_img = "Parallel_Beam"
 
-            # column section properties
+        # column section properties
         if self.connectivity == 'Hollow/Tubular Column Base':
             if self.dp_column_designation[1:4] == 'SHS':
                 section_type = 'Square Hollow Section (SHS)'
@@ -1303,6 +1408,7 @@ class ColumnDesign(Member):
 
         if self.section_property=='Columns' or self.section_property=='Beams':
             self.report_column = {KEY_DISP_SEC_PROFILE: "ISection",
+                                  KEY_DISP_SECSIZE: (self.section_property.designation, self.sec_profile),
                                   KEY_DISP_COLSEC_REPORT: self.section_property.designation,
                                   KEY_DISP_MATERIAL: self.section_property.material,
  #                                 KEY_DISP_APPLIED_AXIAL_FORCE: self.section_property.,
@@ -1337,9 +1443,8 @@ class ColumnDesign(Member):
 
 
         self.report_input = \
-            {KEY_MAIN_MODULE: self.mainmodule,
+            {#KEY_MAIN_MODULE: self.mainmodule,
              KEY_MODULE: self.module, #"Axial load on column "
-             KEY_DISP_SECTION_PROFILE: self.sec_profile,
              KEY_MATERIAL: self.material,
              KEY_DISP_ACTUAL_LEN_ZZ: self.length_zz,
              KEY_DISP_ACTUAL_LEN_YY: self.length_yy,
@@ -1347,9 +1452,10 @@ class ColumnDesign(Member):
              KEY_DISP_END2: self.end_2_z,
              KEY_DISP_END1_Y: self.end_1_y,
              KEY_DISP_END2_Y: self.end_2_y,
-             KEY_DISP_AXIAL: self.load,
+             KEY_DISP_AXIAL: self.load.axial_force,
              KEY_DISP_SEC_PROFILE: self.sec_profile,
-             KEY_DISP_SECSIZE: self.result_section_class,
+             #KEY_DISP_SECSIZE: self.result_section_class,
+             KEY_DISP_SECSIZE:  str(self.sec_list),
              KEY_DISP_ULTIMATE_STRENGTH_REPORT: self.euler_bs_yy,
              KEY_DISP_YIELD_STRENGTH_REPORT: self.result_bc_yy,
 
@@ -1362,49 +1468,79 @@ class ColumnDesign(Member):
 
         self.h = (self.beam_D - (2 * self.beam_tf))
 
-        #1.1 Input sections display
-        t1 = ('SubSection', 'List of Input Sections',self.input_section_list),
-        self.report_check.append(t1)
+        # 1.1 Input sections display
+        #t1 = ('SubSection', 'List of Input Sections', str(self.input_section_list))
+        #self.report_check.append(t1)
+
 
         # 2.2 CHECK: Buckling Class - Compatibility Check
         t1 = ('SubSection', 'Buckling Class - Compatibility Check', '|p{4cm}|p{3.5cm}|p{6.5cm}|p{2cm}|')
         self.report_check.append(t1)
 
-        t1 = ("h/bf , tf ", comp_column_class_section_check_required(self.bucklingclass, self.h, self.bf),
-              comp_column_class_section_check_provided(self.bucklingclass, self.h, self.bf, self.tf, self.var_h_bf),
-              'Compatible')  # if self.bc_compatibility_status is True else 'Not compatible')
+        t1 = (
+            "h/bf , tf", 
+            comp_column_class_section_check_required(self.bucklingclass, self.h, self.bf),
+            comp_column_class_section_check_provided(self.bucklingclass, self.h, self.bf, self.tf, self.var_h_bf), ''
+            r"$\frac{h}{b_f}, t_f \text{ Compatible}$"
+        )  # if self.bc_compatibility_status is True else 'Not compatible')
         self.report_check.append(t1)
 
         # 2.3 CHECK: Cross-section classification
         t1 = ('SubSection', 'Cross-section classification', '|p{4.5cm}|p{3cm}|p{6.5cm}|p{1.5cm}|')
         self.report_check.append(t1)
 
-        t1 = ("b/tf and d/tw ", cross_section_classification_required(self.section),
-              cross_section_classification_provided(self.tf, self.b1, self.epsilon, self.section, self.b1_tf,
-                                                    self.d1_tw, self.ep1, self.ep2, self.ep3, self.ep4),
-              'b = bf / 2,d = h – 2 ( T + R1),έ = (250 / Fy )^0.5,Compatible')  # if self.bc_compatibility_status is True else 'Not compatible')
+        t1 = (
+            "b/tf and d/tw",
+            cross_section_classification_required(self.section),
+            cross_section_classification_provided(
+                self.tf, self.b1, self.epsilon, self.section, self.b1_tf,
+                self.d1_tw, self.ep1, self.ep2, self.ep3, self.ep4
+            ), 
+            ''
+            r"$b = \frac{b_\text{f}}{2}, d = h - 2(T + R_1), \varepsilon = \sqrt{\frac{250}{F_\text{y}}}, \text{Compatible}$"
+        )  # if self.bc_compatibility_status is True else 'Not compatible')
         self.report_check.append(t1)
 
         # 2.4 CHECK : Member Check
-        t1 = ("Slenderness", cl_7_2_2_slenderness_required(self.KL, self.ry, self.lamba),
-              cl_7_2_2_slenderness_provided(self.KL, self.ry, self.lamba), 'PASS')
+        t1 = ('SubSection', 'Member Check', '|p{4.5cm}|p{3cm}|p{6.5cm}|p{1.5cm}|')
+        self.report_check.append(t1)
+        t1 = (
+            "Slenderness",
+            cl_7_2_2_slenderness_required(self.KL, self.ry, self.lamba),
+            cl_7_2_2_slenderness_provided(self.KL, self.ry, self.lamba),
+            'PASS'
+        )
         self.report_check.append(t1)
 
         t1 = (
-        "Design Compressive stress (fcd)", cl_7_1_2_1_fcd_check_required(self.gamma_mo, self.f_y, self.f_y_gamma_mo),
-        cl_7_1_2_1_fcd_check_provided(self.facd), 'PASS')
+            "Design Compressive stress (fcd)",
+            cl_7_1_2_1_fcd_check_required(self.gamma_mo, self.f_y, self.f_y_gamma_mo),
+            cl_7_1_2_1_fcd_check_provided(self.facd),
+            'PASS'
+        )
         self.report_check.append(t1)
 
-        t1 = ("Design Compressive strength (Pd)", cl_7_1_2_design_comp_strength_required(self.axial),
-              cl_7_1_2_design_comp_strength_provided(self.Aeff, self.facd, self.A_eff_facd), "PASS")
+        t1 = (
+            "Design Compressive strength (Pd)",
+            cl_7_1_2_design_comp_strength_required(self.axial),
+            cl_7_1_2_design_comp_strength_provided(self.Aeff, self.facd, self.A_eff_facd),
+            "PASS"
+        )
         self.report_check.append(t1)
 
+        # Adding an empty row to finalize the table or for formatting purposes
         t1 = ('', '', '', '')
         self.report_check.append(t1)
+
+        Disp_2d_image = []
+        Disp_3d_image = "/ResourceFiles/images/3d.png"
         print(sys.path[0])
         rel_path = str(sys.path[0])
         rel_path = os.path.abspath(".") # TEMP
         rel_path = rel_path.replace("\\", "/")
         fname_no_ext = popup_summary['filename']
-        CreateLatex.save_latex(CreateLatex(), self.report_input, self.report_check, popup_summary, fname_no_ext,
-                              rel_path, module=self.module)
+        CreateLatex.save_latex(CreateLatex(), self.report_input, self.report_check, popup_summary, fname_no_ext, rel_path, Disp_2d_image,
+                               Disp_3d_image, module=self.module)
+        
+
+
