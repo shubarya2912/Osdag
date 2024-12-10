@@ -1479,22 +1479,25 @@ class ColumnDesign(Member):
             tf_limit = tf  # Apply limits to tf as needed by IS 800
             if axis == "ZZ":
                 # Check based on h/bf limits
-                if h_bf_ratio <= 1 and tf_limit >= 40:
-                    return "A"
-                elif 1 < h_bf_ratio <= 1.5 and tf_limit >= 40:
+                if h_bf_ratio <= 1.2 and tf_limit >= 100:
+                    return "d"
+                elif h_bf_ratio <= 1.2 and tf_limit < 100:
                     return "B"
-                elif 1.5 < h_bf_ratio <= 2 and tf_limit >= 40:
-                    return "C"
+                elif h_bf_ratio > 1.2 and tf_limit < 40:
+                    return "A"
+                elif h_bf_ratio > 1.2 and 40< tf_limit <100:
                 else:
                     return "D"
             elif axis == "YY":
                 # Check based on h/bf limits
-                if h_bf_ratio <= 1.5 and tf_limit >= 40:
-                    return "A"
-                elif 1.5 < h_bf_ratio <= 2 and tf_limit >= 40:
+                if h_bf_ratio > 1.2 and tf_limit < 40:
                     return "B"
-                elif 2 < h_bf_ratio <= 2.5 and tf_limit >= 40:
+                elif h_bf_ratio > 1.2 and 40< tf_limit <100:
                     return "C"
+                elif h_bf_ratio <= 1.2 and tf_limit >= 100:
+                    return "D"
+                elif h_bf_ratio <= 1.2 and tf_limit < 100:
+                    return "C"   
                 else:
                     return "D"
             else:
