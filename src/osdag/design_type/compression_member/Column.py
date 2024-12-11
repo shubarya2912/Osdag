@@ -1612,13 +1612,25 @@ class ColumnDesign(Member):
         )
         self.report_check.append(t1)
 
-        t1 = (
-            "Design Compressive stress (fcd)",
-            cl_7_1_2_1_fcd_check_required(self.gamma_mo, self.f_y, self.f_y_gamma_mo),
-            cl_7_1_2_1_fcd_check_provided(self.facd),
-            'PASS'
-        )
-        self.report_check.append(t1)
+         t1 = ('SubSection', 'Checks', '|p{4cm}|p{2 cm}|p{7cm}|p{3 cm}|')
+         self.report_check.append(t1)
+                           
+         t1 = ('$\phi_zz$', ' ',
+                      cl_8_7_1_5_phi(self.result_IF_zz,self.result_eff_sr_zz , self.result_phi_zz),
+                      ' ')
+         self.report_check.append(t1)
+         t1 = ('$\phi_yy$', ' ',
+                      cl_8_7_1_5_phi(self.result_IF_yy,self.result_eff_sr_yy , self.result_phi_yy),
+                      ' ')
+         self.report_check.append(t1)
+         t1 = ('Fcd_zz($N/mm^2$)', ' ',
+                      cl_8_7_1_5_Buckling(self.material_property.fy,self.gamma_m0,self.result_eff_sr_zz,self.result_phi_zz,self.result_fcd_2,self.result_fcd),
+                      ' ')
+         self.report_check.append(t1)
+         t1 = ('Fcd_yy($N/mm^2$)', ' ',
+                      cl_8_7_1_5_Buckling(self.material_property.fy,self.gamma_m0,self.result_eff_sr_yy,self.result_phi_yy,self.result_fcd_2,self.result_fcd),
+                      ' ')
+         self.report_check.append(t1)
 
         t1 = (
             "Design Compressive strength (Pd)",
@@ -1641,6 +1653,3 @@ class ColumnDesign(Member):
                               rel_path, [], '', module=self.module) #
         
         
-
-
-
